@@ -868,6 +868,6 @@ def step_3(choice_product, choice_subproduct, master_input_folder):
         if chosen_subproduct == 'all sub-products':
             return total(master_input_folder, chosen_product)
         else:
-            subproduct_name = product_name_dict[chosen_product](chosen_sub_product)
+            subproduct_name = product_name_dict[chosen_product](chosen_subproduct)
             return subproduct_name.out()
 
