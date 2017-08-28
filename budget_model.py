@@ -1,9 +1,9 @@
 
 # coding: utf-8
 
-# # Common functions
+# # Set up
 
-# In[134]:
+# In[1]:
 
 
 from __future__ import print_function
@@ -19,7 +19,7 @@ import ipywidgets as widgets
 from pixiedust.display import *
 
 
-# In[135]:
+# In[2]:
 
 
 def printmd(string):
@@ -29,7 +29,7 @@ def printmd(string):
     dp(Markdown(string))
 
 
-# In[136]:
+# In[3]:
 
 
 def forecast_window(start_month, start_year, num_months):
@@ -53,7 +53,7 @@ def forecast_window(start_month, start_year, num_months):
     return month_names, days_in_month, year        
 
 
-# In[137]:
+# In[4]:
 
 
 def adb(eop, eop_month_minus_1):
@@ -68,7 +68,7 @@ def adb(eop, eop_month_minus_1):
     return (eop+eop_previous_month)/2
 
 
-# In[138]:
+# In[5]:
 
 
 def add_nim_actual(table):
@@ -94,7 +94,7 @@ def add_provision_to_toi(table):
 
 # # Product classes
 
-# In[139]:
+# In[6]:
 
 
 class Product():
@@ -135,7 +135,7 @@ class Product():
         return self.file.parse(sheetname='cii_rate', header=None).loc[1]
 
 
-# In[140]:
+# In[7]:
 
 
 class Lending(Product):
@@ -272,7 +272,7 @@ class Lending(Product):
         return add_provision_to_toi(add_nim_actual(out))
 
 
-# In[141]:
+# In[8]:
 
 
 class Loan(Lending):
@@ -362,7 +362,7 @@ class Loan(Lending):
         return out
 
 
-# In[142]:
+# In[9]:
 
 
 class UPL(Loan):
@@ -391,7 +391,7 @@ class HomeLoan(Loan):
         self.file = pd.ExcelFile(self.path)
 
 
-# In[143]:
+# In[10]:
 
 
 class CreditCard(Lending):
@@ -589,7 +589,7 @@ class CreditCard(Lending):
         return out
 
 
-# In[144]:
+# In[11]:
 
 
 class Deposit(Product):
@@ -647,7 +647,7 @@ class Deposit(Product):
         return add_nim_actual(out)
 
 
-# In[145]:
+# In[12]:
 
 
 class CASA(Deposit):
@@ -663,7 +663,7 @@ class TD(Deposit):
 
 # # Build aggregations
 
-# In[146]:
+# In[13]:
 
 
 def inputs_dir(master_input_folder):
@@ -687,7 +687,7 @@ product_name_dict = {'UPL': UPL,
                      'TD': TD}
 
 
-# In[147]:
+# In[14]:
 
 
 def list_all_sub_products(master_input_folder, product_name):
@@ -725,7 +725,7 @@ def total(master_input_folder, product_name, *arg):
     return product 
 
 
-# In[148]:
+# In[15]:
 
 
 aggregates = ['all deposit', 'all secured lending','all unsecured lending',
@@ -758,7 +758,7 @@ categories['all deposits'] = ['CASA', 'TD']
 categories['all products'] = categories['all lending including cards'] + categories['all deposits']
 
 
-# In[149]:
+# In[16]:
 
 
 def aggregation(master_input_folder, chosen_product):
@@ -777,7 +777,7 @@ def aggregation(master_input_folder, chosen_product):
 
 # # Build interface
 
-# In[150]:
+# In[17]:
 
 
 def choose_folder():
@@ -785,7 +785,7 @@ def choose_folder():
     return master_input_folder
 
 
-# In[151]:
+# In[18]:
 
 
 def list_product_tree(master_input_folder):
@@ -803,7 +803,7 @@ def list_product_tree(master_input_folder):
     return product_tree
 
 
-# In[152]:
+# In[19]:
 
 
 def choose_product(product_tree):
@@ -828,7 +828,7 @@ def f(product):
     return product
 
 
-# In[153]:
+# In[20]:
 
 
 def step_1():
@@ -841,7 +841,7 @@ def step_1():
     return master_input_folder, product_tree
 
 
-# In[154]:
+# In[21]:
 
 
 def step_2b(choice_product, product_tree):
@@ -856,7 +856,7 @@ def step_2b(choice_product, product_tree):
         return choice_sub_product
 
 
-# In[160]:
+# In[22]:
 
 
 def step_3(choice_product, choice_subproduct, master_input_folder):
@@ -868,6 +868,11 @@ def step_3(choice_product, choice_subproduct, master_input_folder):
         if chosen_subproduct == 'all sub-products':
             return total(master_input_folder, chosen_product)
         else:
-            subproduct_name = product_name_dict[chosen_product](chosen_subproduct)
+            subproduct_name = product_name_dict[chosen_product](master_input_folder, chosen_subproduct)
             return subproduct_name.out()
+
+
+
+
+
 
