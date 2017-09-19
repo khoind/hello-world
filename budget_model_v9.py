@@ -3,7 +3,7 @@
 
 # # Set up
 
-# In[640]:
+# In[2]:
 
 
 import numpy as np
@@ -16,7 +16,7 @@ from IPython.display import display
 
 # # Common functions
 
-# In[641]:
+# In[3]:
 
 
 def forecast_window(start_month, start_year, num_months):
@@ -83,7 +83,7 @@ def add_provision_to_toi(table):
 
 # # Loan functions
 
-# In[642]:
+# In[4]:
 
 
 def inputs_loan(file, book):
@@ -445,7 +445,7 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[643]:
+# In[5]:
 
 
 def inputs_od(file):
@@ -585,7 +585,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[644]:
+# In[6]:
 
 
 def inputs_cc(file):
@@ -728,7 +728,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[645]:
+# In[7]:
 
 
 def inputs_deposit(file):
@@ -779,7 +779,7 @@ def outputs_deposit(file):
     
 
 
-# In[646]:
+# In[8]:
 
 
 def inputs_investment(file):
@@ -807,7 +807,7 @@ def outputs_investment(file):
 
 # ## Run
 
-# In[647]:
+# In[9]:
 
 
 def get_files_and_paths(folder):
@@ -933,14 +933,8 @@ def run_model(folder, size, year=None):
     for key, value in prod_to_out.items():
         print('########{}########'.format(key.upper()))
         visualize(value, size)
+    return None
     
-    
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
