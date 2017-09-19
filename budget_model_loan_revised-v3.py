@@ -3,7 +3,7 @@
 
 # # Set up
 
-# In[625]:
+# In[640]:
 
 
 import numpy as np
@@ -11,11 +11,12 @@ import pandas as pd
 import calendar
 import matplotlib.pyplot as plt
 import os
+from IPython.display import display
 
 
 # # Common functions
 
-# In[626]:
+# In[641]:
 
 
 def forecast_window(start_month, start_year, num_months):
@@ -82,7 +83,7 @@ def add_provision_to_toi(table):
 
 # # Loan functions
 
-# In[627]:
+# In[642]:
 
 
 def inputs_loan(file, book):
@@ -444,7 +445,7 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[628]:
+# In[643]:
 
 
 def inputs_od(file):
@@ -584,7 +585,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[629]:
+# In[644]:
 
 
 def inputs_cc(file):
@@ -727,7 +728,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[630]:
+# In[645]:
 
 
 def inputs_deposit(file):
@@ -778,7 +779,7 @@ def outputs_deposit(file):
     
 
 
-# In[631]:
+# In[646]:
 
 
 def inputs_investment(file):
@@ -806,7 +807,7 @@ def outputs_investment(file):
 
 # ## Run
 
-# In[632]:
+# In[647]:
 
 
 def get_files_and_paths(folder):
@@ -932,7 +933,18 @@ def run_model(folder, size, year=None):
     for key, value in prod_to_out.items():
         print('########{}########'.format(key.upper()))
         visualize(value, size)
-    return total, class_to_out, prod_to_out, subprod_to_out    
     
     
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
