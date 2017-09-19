@@ -936,21 +936,3 @@ def run_model(folder, size, year=None):
     
     
 
-
-# In[633]:
-
-
-total, class_to_out, prod_to_out, subprod_to_out = run_model(folder='division', year=2018, size=(10,4))
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
