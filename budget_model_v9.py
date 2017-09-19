@@ -808,7 +808,7 @@ def outputs_investment(file):
 
 # ## Run
 
-# In[46]:
+# In[48]:
 
 
 def get_files_and_paths(folder):
@@ -887,30 +887,30 @@ def visualize(df, size):
     print('### Summary ###')
     if 'eop' in df.columns:
         print('EOP balance, last month: {0:.0f}'.format(df['eop'].iloc[-1]))
-        df.plot(y=['eop', 'adb'], figsize=size)
+        df.plot(y=['eop', 'adb'], figsize=size, ylim = (0,None))
         plt.show()
     print('TOI - total: {0:.1f}'.format(df['toi'].sum()))
     if 'provision' in df.columns:
         print('Provision - total: {0:.0f}'.format(df['provision'].sum()))
         print('Provision as % of TOI: {0:.1f}%'.format(df['provision'].sum() / df['toi'].sum() * 100))
-        df.plot(y=['nii', 'nfi','toi', 'provision'], figsize = size)
+        df.plot(y=['nii', 'nfi','toi', 'provision'], figsize = size, ylim = (0,None))
         plt.show()
     else: 
-        df.plot(y=['nii', 'nfi','toi'], figsize=size)
+        df.plot(y=['nii', 'nfi','toi'], figsize=size, ylim = (0,None))
         plt.show()
     if 'disbursement' in df.columns:
         print('Disbursement - total: {0:0f}'.format(df['disbursement'].sum()))
         print('Disbursement - monthly average: {0:0f}'.format(df['disbursement'].mean()))
-        df.plot(y=['disbursement'], figsize=size)
+        df.plot(y=['disbursement'], figsize=size, ylim = (0,None))
         plt.show()
     if 'monthly_issued' in df.columns:
         print('Card spend - total: {0:.0f}'.format(df['total_spend'].sum()))
         print('Card spend - monthly average: {0:.0f}'.format(df['total_spend'].mean()))
-        df.plot(y=['total_spend'], figsize=size)
+        df.plot(y=['total_spend'], figsize=size, ylim = (0,None))
         plt.show()
         print('Cards issuance - total: {0:.0f}'.format(df['monthly_issued'].sum()))
         print('Cards issuance - monthly average: {0:.0f}'.format(df['monthly_issued'].mean()))
-        df.plot(y=['monthly_issued'], figsize=size)
+        df.plot(y=['monthly_issued'], figsize=size, ylim = (0,None))
         plt.show()
     print()
     print('### Full Table ###')
