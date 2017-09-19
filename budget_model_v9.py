@@ -83,7 +83,7 @@ def add_provision_to_toi(table):
 
 # # Loan functions
 
-# In[161]:
+# In[241]:
 
 
 def inputs_loan(file, book):
@@ -92,11 +92,12 @@ def inputs_loan(file, book):
     other_inputs = other_inputs.fillna(value=0)
     inputs = {index: other_inputs.loc[index] for index in other_inputs.index.tolist()}
     inputs['disbursement'] = pd.to_numeric(inputs['disbursement'])
-    inputs['payment_method'] = str(file.parse(sheetname='flow_rate')[0][0])
+    # Payment method
+    inputs['payment_method'] = str(file.parse(sheetname='payment_method', header=None)[0][0])
     # Read flow rates
     flow_rate = file.parse(sheetname='flow_rate').fillna(value=0)
     flow_rate = flow_rate.set_index(['from', 'to'])
-    inputs['flow_rate'] = flow_rate
+    inputs['flow_rate'] = flow_rate * (-1)
     # Read paid-off rate
     inputs['paid_off_rate'] = file.parse(sheetname='paid_off_rate').fillna(value=0)
     # Read historical ENR
@@ -446,7 +447,7 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[162]:
+# In[242]:
 
 
 def inputs_od(file):
@@ -586,7 +587,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[177]:
+# In[243]:
 
 
 def inputs_cc(file):
@@ -729,7 +730,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[164]:
+# In[244]:
 
 
 def inputs_deposit(file):
@@ -780,7 +781,7 @@ def outputs_deposit(file):
     
 
 
-# In[165]:
+# In[245]:
 
 
 def inputs_investment(file):
@@ -808,7 +809,7 @@ def outputs_investment(file):
 
 # ## Run
 
-# In[166]:
+# In[290]:
 
 
 def get_files_and_paths(folder):
@@ -874,12 +875,12 @@ def all_outputs(folder, year=None):
         class_to_out[product_class].append(output)
         prod_to_out[product] = prod_to_out.get(product, [])
         prod_to_out[product].append(output)
-        subprod_to_out[subproduct] = prod_to_out.get(subproduct, [])
+        subprod_to_out[subproduct] = subprod_to_out.get(subproduct, [])
         subprod_to_out[subproduct].append(output)
     # Aggregate outputs by product classes, products, sub_products    
     class_to_out = aggregate(class_to_out)
     prod_to_out = aggregate(prod_to_out)
-    subprod_to_out = aggregate(subprod_to_out)
+    subprod_to_out_agg = aggregate(subprod_to_out)
     total = add_dfs(list(class_to_out.values()))
     return total, class_to_out, prod_to_out, subprod_to_out
 
@@ -921,7 +922,7 @@ def visualize(df, size):
 def run_model(folder, size, year=None):
     total, class_to_out, prod_to_out, subprod_to_out = all_outputs(folder, year=year)
     print('#############################################')
-    print('ALL PRODUCT')
+    print('ALL PRODUCTS')
     visualize(total, size)
     print()
     print('#############################################')
@@ -935,6 +936,20 @@ def run_model(folder, size, year=None):
     for key, value in prod_to_out.items():
         print('########{}########'.format(key.upper()))
         visualize(value, size)
+    print()
+    print('#############################################')
+    print('BY SUBPRODUCT')
+    for key, value in subprod_to_out.items():
+        print('########{}########'.format(key.upper()))
+        visualize(value, size)    
     return None
     
 
+
+# In[291]:
+
+
+run_model('division_6', year=2018, size=(9,4))
+
+
+# ###### 
