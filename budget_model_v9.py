@@ -946,10 +946,4 @@ def run_model(folder, size, year=None):
     
 
 
-# In[291]:
 
-
-run_model('division_6', year=2018, size=(9,4))
-
-
-# ###### 
