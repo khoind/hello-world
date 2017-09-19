@@ -83,32 +83,32 @@ def add_provision_to_toi(table):
 
 # # Loan functions
 
-# In[41]:
+# In[161]:
 
 
 def inputs_loan(file, book):
     # Read other inputs
-    other_inputs = file.parse(sheetname='other_inputs_'+book)
+    other_inputs = file.parse(sheetname='other_inputs_'+book).fillna(value=0)
     other_inputs = other_inputs.fillna(value=0)
     inputs = {index: other_inputs.loc[index] for index in other_inputs.index.tolist()}
     inputs['disbursement'] = pd.to_numeric(inputs['disbursement'])
     inputs['payment_method'] = str(file.parse(sheetname='flow_rate')[0][0])
     # Read flow rates
-    flow_rate = file.parse(sheetname='flow_rate')
+    flow_rate = file.parse(sheetname='flow_rate').fillna(value=0)
     flow_rate = flow_rate.set_index(['from', 'to'])
     inputs['flow_rate'] = flow_rate
     # Read paid-off rate
-    inputs['paid_off_rate'] = file.parse(sheetname='paid_off_rate')
+    inputs['paid_off_rate'] = file.parse(sheetname='paid_off_rate').fillna(value=0)
     # Read historical ENR
-    inputs['enr_historical'] = file.parse(sheetname='enr_historical_'+book)
+    inputs['enr_historical'] = file.parse(sheetname='enr_historical_'+book).fillna(value=0)
     # Read netflow rate
-    inputs['netflow_rate'] = file.parse(sheetname='netflow_rate')
+    inputs['netflow_rate'] = file.parse(sheetname='netflow_rate').fillna(value=0)
     # Read recovery rate
-    inputs['recovery_rate'] = file.parse(sheetname='recovery_rate')
+    inputs['recovery_rate'] = file.parse(sheetname='recovery_rate').fillna(value=0)
     # Read promo assumptions
-    inputs['cii_rate_promo'] = file.parse(sheetname='cii_rate_promo')
-    inputs['promo_projection'] = file.parse(sheetname='promo_projection')
-    inputs['promo_proportion'] = file.parse(sheetname='promo_proportion')
+    inputs['cii_rate_promo'] = file.parse(sheetname='cii_rate_promo').fillna(value=0)
+    inputs['promo_projection'] = file.parse(sheetname='promo_projection').fillna(value=0)
+    inputs['promo_proportion'] = file.parse(sheetname='promo_proportion').fillna(value=0)
     return inputs
     
 def outputs_loan_by_book(file, book):
@@ -446,27 +446,27 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[42]:
+# In[162]:
 
 
 def inputs_od(file):
     # Read other inputs
-    other_inputs = file.parse(sheetname='other_inputs')
+    other_inputs = file.parse(sheetname='other_inputs').fillna(value=0)
     other_inputs = other_inputs.fillna(value=0)
     inputs = {index: other_inputs.loc[index] for index in other_inputs.index.tolist()}
     inputs['disbursement'] = pd.to_numeric(inputs['disbursement'])
     # Read flow rates
-    flow_rate = file.parse(sheetname='flow_rate')
+    flow_rate = file.parse(sheetname='flow_rate').fillna(value=0)
     flow_rate = flow_rate.set_index(['from', 'to'])
     inputs['flow_rate'] = flow_rate
     # Read paid-off rate
-    inputs['paid_off_rate'] = file.parse(sheetname='paid_off_rate')
+    inputs['paid_off_rate'] = file.parse(sheetname='paid_off_rate').fillna(value=0)
     # Read historical ENR
-    inputs['enr_historical'] = file.parse(sheetname='enr_historical')
+    inputs['enr_historical'] = file.parse(sheetname='enr_historical').fillna(value=0)
     # Read netflow rate
-    inputs['netflow_rate'] = file.parse(sheetname='netflow_rate')
+    inputs['netflow_rate'] = file.parse(sheetname='netflow_rate').fillna(value=0)
     # Read recovery rate
-    inputs['recovery_rate'] = file.parse(sheetname='recovery_rate')
+    inputs['recovery_rate'] = file.parse(sheetname='recovery_rate').fillna(value=0)
     return inputs
     
 def outputs_od(file):
@@ -586,7 +586,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[43]:
+# In[177]:
 
 
 def inputs_cc(file):
@@ -595,11 +595,11 @@ def inputs_cc(file):
     other_inputs = other_inputs.fillna(value=0)
     inputs = {index: other_inputs.loc[index] for index in other_inputs.index.tolist()}
     # Read ENR historical
-    inputs['enr_historical'] = file.parse(sheetname='enr_historical')
+    inputs['enr_historical'] = file.parse(sheetname='enr_historical').fillna(value=0)
     # Read netflow
-    inputs['netflow_rate'] = file.parse(sheetname='netflow_rate')
+    inputs['netflow_rate'] = file.parse(sheetname='netflow_rate').fillna(value=0)
     # Read recovery rate
-    inputs['recovery_rate'] = file.parse(sheetname='recovery_rate')    
+    inputs['recovery_rate'] = file.parse(sheetname='recovery_rate').fillna(value=0)    
     return inputs
 
 def outputs_cc(file):
@@ -618,7 +618,7 @@ def outputs_cc(file):
     
     enr = pd.DataFrame(np.zeros([len(all_buckets), len(timeline['months_extended'])]),
                       index=all_buckets, columns=timeline['months_extended'])
-    enr[-1] = inputs['enr_historical'][-1]
+    enr[-1] = inputs['enr_historical'][-1]*1.0
         
     # ---------BALANCE SHEET---------  
     
@@ -729,7 +729,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[44]:
+# In[164]:
 
 
 def inputs_deposit(file):
@@ -737,9 +737,9 @@ def inputs_deposit(file):
     other_inputs = other_inputs.fillna(value=0)
     inputs = {index: other_inputs.loc[index] for index in other_inputs.index.tolist()}
     
-    inputs['composition'] = file.parse(sheetname='composition')
-    inputs['cii_rate'] = file.parse(sheetname='cii_rate')
-    inputs['ftp_rate'] = file.parse(sheetname='ftp_rate')
+    inputs['composition'] = file.parse(sheetname='composition').fillna(value=0)
+    inputs['cii_rate'] = file.parse(sheetname='cii_rate').fillna(value=0)
+    inputs['ftp_rate'] = file.parse(sheetname='ftp_rate').fillna(value=0)
     
     return inputs
 
@@ -780,7 +780,7 @@ def outputs_deposit(file):
     
 
 
-# In[45]:
+# In[165]:
 
 
 def inputs_investment(file):
@@ -808,7 +808,7 @@ def outputs_investment(file):
 
 # ## Run
 
-# In[48]:
+# In[166]:
 
 
 def get_files_and_paths(folder):
@@ -874,7 +874,7 @@ def all_outputs(folder, year=None):
         class_to_out[product_class].append(output)
         prod_to_out[product] = prod_to_out.get(product, [])
         prod_to_out[product].append(output)
-        subprod_to_out[subproduct] = prod_to_out.get(product, [])
+        subprod_to_out[subproduct] = prod_to_out.get(subproduct, [])
         subprod_to_out[subproduct].append(output)
     # Aggregate outputs by product classes, products, sub_products    
     class_to_out = aggregate(class_to_out)
@@ -890,6 +890,7 @@ def visualize(df, size):
         df.plot(y=['eop', 'adb'], figsize=size, ylim = (0,None))
         plt.show()
     print('TOI - total: {0:.1f}'.format(df['toi'].sum()))
+    print('TOI - monthly_average: {0:.1f}'.format(df['toi'].mean()))
     if 'provision' in df.columns:
         print('Provision - total: {0:.0f}'.format(df['provision'].sum()))
         print('Provision as % of TOI: {0:.1f}%'.format(df['provision'].sum() / df['toi'].sum() * 100))
@@ -936,10 +937,4 @@ def run_model(folder, size, year=None):
         visualize(value, size)
     return None
     
-
-
-# In[ ]:
-
-
-
 
