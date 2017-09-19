@@ -83,7 +83,7 @@ def add_provision_to_toi(table):
 
 # # Loan functions
 
-# In[4]:
+# In[41]:
 
 
 def inputs_loan(file, book):
@@ -92,6 +92,7 @@ def inputs_loan(file, book):
     other_inputs = other_inputs.fillna(value=0)
     inputs = {index: other_inputs.loc[index] for index in other_inputs.index.tolist()}
     inputs['disbursement'] = pd.to_numeric(inputs['disbursement'])
+    inputs['payment_method'] = str(file.parse(sheetname='flow_rate')[0][0])
     # Read flow rates
     flow_rate = file.parse(sheetname='flow_rate')
     flow_rate = flow_rate.set_index(['from', 'to'])
@@ -188,7 +189,7 @@ def outputs_loan_by_book(file, book):
         ppmt_impact_prepayment[month] = prepayment[month-1]/inputs['tenor'][month] + ppmt_impact_prepayment[month-1]
 
         if book == 'new':
-            if inputs['payment_method'][month].lower() == 'eqp':
+            if inputs['payment_method'].lower() == 'eqp':
                 ppmt_impact_disbursement[month] = (inputs['disbursement'][month-1]/inputs['tenor'][month] + 
                                                                ppmt_impact_disbursement[month-1])
             else:
@@ -445,7 +446,7 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[5]:
+# In[42]:
 
 
 def inputs_od(file):
@@ -585,7 +586,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[6]:
+# In[43]:
 
 
 def inputs_cc(file):
@@ -728,7 +729,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[7]:
+# In[44]:
 
 
 def inputs_deposit(file):
@@ -779,7 +780,7 @@ def outputs_deposit(file):
     
 
 
-# In[8]:
+# In[45]:
 
 
 def inputs_investment(file):
@@ -807,7 +808,7 @@ def outputs_investment(file):
 
 # ## Run
 
-# In[9]:
+# In[46]:
 
 
 def get_files_and_paths(folder):
