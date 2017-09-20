@@ -447,7 +447,7 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[242]:
+# In[344]:
 
 
 def inputs_od(file):
@@ -468,6 +468,8 @@ def inputs_od(file):
     inputs['netflow_rate'] = file.parse(sheetname='netflow_rate').fillna(value=0)
     # Read recovery rate
     inputs['recovery_rate'] = file.parse(sheetname='recovery_rate').fillna(value=0)
+    # Read increase in month rate
+    inputs['increase_in_month_rate'] = file.parse(sheetname='increase_in_month_rate').fillna(value=0)
     return inputs
     
 def outputs_od(file):
@@ -498,13 +500,19 @@ def outputs_od(file):
                              index=all_buckets, columns=timeline['months_extended'])
 
     bkt_to_ovd = pd.DataFrame(np.zeros([len(all_buckets), len(timeline['months_extended'])]),
-                      index=all_buckets, columns=timeline['months_extended'])
+                             index=all_buckets, columns=timeline['months_extended'])
+    
+    bkt_increase_in_month = pd.DataFrame(np.zeros([len(all_buckets), len(timeline['months_extended'])]),
+                             index=all_buckets, columns=timeline['months_extended'])
 
     # ---------BALANCE SHEET---------
     
+    # New sales principal payment
+    ppmt_newsale = inputs['disbursement'] * inputs['newsale_rate_closed_in_month']
+    
     ## New sales to buckets
     newsale_to_bkt = inputs['disbursement'] * inputs['flow_rate'].loc['new_sale']
-    newsale_to_bkt.loc['B0'] = -(inputs['disbursement'] + newsale_to_bkt.loc['B1A':'other'].sum() + inputs['disbursement'] * inputs['paid_off_rate'].loc['new_sale'])
+    newsale_to_bkt.loc['B0'] = -(inputs['disbursement'] + newsale_to_bkt.loc['B1A':'other'].sum() + inputs['disbursement'] * inputs['paid_off_rate'].loc['new_sale'] + ppmt_newsale)
 
     # New sales to bad bank
     newsale_to_bb = inputs['newsale_to_bb_rate'] * inputs['disbursement']
@@ -525,8 +533,12 @@ def outputs_od(file):
         ### ppmt_all_bkts
         ppmt_all_bkts[month] = inputs['paid_off_rate'][month] * enr[month-1]
         
+        ### Bucket increase in month
+        bkt_increase_in_month[month] = inputs['increase_in_month_rate'][month] * enr[month-1]
+        bkt_increase_in_month[month]['B0'] = inputs['disbursement'][month]
+        
         ## ENR
-        enr[month] = enr[month-1] + bkt_outflow[month] - bkt_inflow[month] + ppmt_all_bkts[month] - newsale_to_bkt[month]
+        enr[month] = enr[month-1] + bkt_outflow[month] - bkt_inflow[month] + ppmt_all_bkts[month] + newsale_to_bkt[month] + bkt_increase_in_month[month]
 
     # EOP balance    
     eop = enr.loc[good_bank_buckets].sum(axis=0)
@@ -587,7 +599,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[243]:
+# In[348]:
 
 
 def inputs_cc(file):
@@ -688,7 +700,7 @@ def outputs_cc(file):
     
     ## Net fee income
     '''To be changed'''
-    nfi = interchange_fee *2
+    nfi = interchange_fee *100/59
     
     # TOI
     toi = nii + nfi
@@ -730,7 +742,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[244]:
+# In[349]:
 
 
 def inputs_deposit(file):
@@ -781,7 +793,7 @@ def outputs_deposit(file):
     
 
 
-# In[245]:
+# In[350]:
 
 
 def inputs_investment(file):
@@ -809,7 +821,7 @@ def outputs_investment(file):
 
 # ## Run
 
-# In[290]:
+# In[363]:
 
 
 def get_files_and_paths(folder):
@@ -892,8 +904,13 @@ def visualize(df, size):
         plt.show()
     print('TOI - total: {0:.1f}'.format(df['toi'].sum()))
     print('TOI - monthly_average: {0:.1f}'.format(df['toi'].mean()))
+    print('NII - total: {0:.1f}'.format(df['nii'].sum()))
+    print('NII - monthly_average: {0:.1f}'.format(df['nii'].mean()))
+    print('NFI - total: {0:.1f}'.format(df['nfi'].sum()))
+    print('NFI - monthly_average: {0:.1f}'.format(df['nfi'].mean()))
     if 'provision' in df.columns:
         print('Provision - total: {0:.0f}'.format(df['provision'].sum()))
+        print('Provision - monthly average: {0:.0f}'.format(df['provision'].mean()))
         print('Provision as % of TOI: {0:.1f}%'.format(df['provision'].sum() / df['toi'].sum() * 100))
         df.plot(y=['nii', 'nfi','toi', 'provision'], figsize = size, ylim = (0,None))
         plt.show()
@@ -921,29 +938,33 @@ def visualize(df, size):
 
 def run_model(folder, size, year=None):
     total, class_to_out, prod_to_out, subprod_to_out = all_outputs(folder, year=year)
-    print('#############################################')
+    print('------------------------------------------------------------------------------------------------------')
     print('ALL PRODUCTS')
+    print()
     visualize(total, size)
     print()
-    print('#############################################')
+    print('------------------------------------------------------------------------------------------------------')
     print('BY PRODUCT CLASS')
+    print()
     for key, value in class_to_out.items():
-        print('########{}########'.format(key.upper()))
+        print('___{}________________________________________'.format(key.upper()))
         visualize(value, size)
+        print()
     print()
-    print('#############################################')
+    print('------------------------------------------------------------------------------------------------------')
     print('BY PRODUCT')
-    for key, value in prod_to_out.items():
-        print('########{}########'.format(key.upper()))
-        visualize(value, size)
     print()
-    print('#############################################')
+    for key, value in prod_to_out.items():
+        print('___{}________________________________________'.format(key.upper()))
+        visualize(value, size)
+        print()
+    print()
+    print('------------------------------------------------------------------------------------------------------')
     print('BY SUBPRODUCT')
     for key, value in subprod_to_out.items():
-        print('########{}########'.format(key.upper()))
-        visualize(value, size)    
+        print('___{}________________________________________'.format(key.upper()))
+        visualize(value, size) 
+        print()
     return None
     
-
-
 
