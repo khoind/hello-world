@@ -3,7 +3,7 @@
 
 # # Set up
 
-# In[130]:
+# In[193]:
 
 
 import numpy as np
@@ -11,12 +11,12 @@ import pandas as pd
 import calendar
 import matplotlib.pyplot as plt
 import os
-from IPython.display import display
+from IPython.display import display, Markdown
 
 
 # # Common functions
 
-# In[131]:
+# In[191]:
 
 
 def forecast_window(start_month, start_year, num_months):
@@ -53,32 +53,6 @@ def generate_timeline(file):
             'months_extended': months_extended,
             'months_names': months_names,
             'days_in_month': days_in_month}   
-
-def printmd(string):
-    '''
-    Print strings formatted in markdown
-    '''
-    dp(Markdown(string))
-    
-def add_nim_actual(table):
-    '''
-    Add actual NIM to the output table
-    :params:
-    table: dataframe containing NII and ADB
-    '''
-    nim_actual = table['nii']/table['adb']
-    table['nim_actual'] = nim_actual
-    return table
-
-def add_provision_to_toi(table):
-    '''
-    Add provision to TOI ratio to the output table
-    :praram:
-    table: dataframe containing TOI and provision
-    '''
-    provision_to_toi = table['provision']/table['toi']
-    table['provision/toi'] = provision_to_toi
-    return table    
 
 
 # # Loan functions
@@ -895,7 +869,7 @@ def outputs_insurance(file):
 
 # ## Run
 
-# In[188]:
+# In[341]:
 
 
 def get_files_and_paths(folder):
@@ -918,15 +892,25 @@ def read_type(file):
 model_dict = {'loan': outputs_loan, 'overdraft': outputs_od, 'creditcard': outputs_cc, 
               'deposit': outputs_deposit,'investment': outputs_investment, 'insurance': outputs_insurance}
 
+def add_ratio(df):
+    if 'adb' in df.columns:
+        df['nii/adb'] = df['nii']/df['adb']*12*100
+    if 'provision' in df.columns:    
+        df['provision/adb'] = df['provision']/df['adb']*12*100
+        df['provision/toi'] = df['provision']/df['toi']*100
+        df['toi_net_provision/adb'] = (df['toi'] - df['provision'])/df['adb']*100
+    if 'total_spend' in df.columns:
+        df['spend/activated card'] = df['total_spend']/df['total_activated']*1000
+        df['activation_rate'] = df['total_activated']/df['total_issued']
+    return df 
+
 def add_dfs(list_of_dfs):
     # Add data frames in a list
     sum_df = list_of_dfs[0]
     if len(list_of_dfs) > 1:
         for df in list_of_dfs[1:]:
             sum_df = sum_df.add(df, fill_value=0).fillna(0)         
-    # Add provision to TOI and NIM actual
-    if 'provision' in sum_df.columns:
-        sum_df = add_nim_actual(add_provision_to_toi(sum_df))        
+    sum_df = add_ratio(sum_df)      
     return sum_df
 
 def aggregate(outputs_map):
@@ -934,6 +918,17 @@ def aggregate(outputs_map):
     for key, output_list in outputs_map.items():
         outputs_map[key] = add_dfs(output_list)
     return outputs_map   
+
+def printmd(string):
+    '''
+    Print strings formatted in markdown
+    '''
+    display(Markdown(string))   
+    
+from ipywidgets import interact, interactive, fixed, interact_manual
+
+def f(x):
+     return x    
 
 def all_outputs(folder, year=2018):
     files = get_files_and_paths(folder)[0]
@@ -969,55 +964,63 @@ def all_outputs(folder, year=2018):
     prod_to_out = aggregate(prod_to_out)
     subprod_to_out_agg = aggregate(subprod_to_out)
     total = add_dfs(list(class_to_out.values()))
+    # Print list of products
+    classes = sorted(list(class_to_out.keys()))
+    prods = sorted(list(prod_to_out.keys()))
+    subprods = sorted(list(subprod_to_out.keys()))  
+    printmd('#### PRODUCT TREE')
+    printmd('#### Product class')
+    print(classes)
+    printmd('#### Product')
+    print(prods)
+    printmd('#### Subproduct')
+    print(subprods)
     return total, class_to_out, prod_to_out, subprod_to_out
 
 def visualize(df, size=(12,4)):
     if 'eop' in df.columns:
-        print('\n------------------------------------------------------')  
-        print('BALANCE SHEET')
-        print('------------------------------------------------------')
+        printmd('---')  
+        printmd('**BALANCE SHEET**')
         print('EOP balance, last month: {0:.0f}'.format(df['eop'].iloc[-1]))
         df.plot(y=['eop', 'adb'], figsize=size, ylim = (0,None), title='Balance in VND bn', grid=True)
         plt.show()
-    print('\n------------------------------------------------------')    
-    print('REVENUE')  
+    printmd('---')    
+    printmd('**REVENUE**') 
     print('TOI - total: {0:.1f}'.format(df['toi'].sum()))
     print('TOI - monthly_average: {0:.1f}'.format(df['toi'].mean()))
     print('NII - total: {0:.1f}'.format(df['nii'].sum()))
     print('NII - monthly_average: {0:.1f}'.format(df['nii'].mean()))
     print('NFI - total: {0:.1f}'.format(df['nfi'].sum()))
     print('NFI - monthly_average: {0:.1f}'.format(df['nfi'].mean())) 
-    if 'eop' in df.columns:
-        toi_to_adb = df['toi']/df['adb']*12*100
-        nii_to_adb = df['nii']/df['adb']*12*100
-        df2 = pd.concat([toi_to_adb, nii_to_adb], axis=1)
-        df2.columns = ['toi_to_adb', 'nii_to_adb']
-        df2.plot(figsize=size, ylim = (0,None), legend=True, title='Margin in percent', grid=True)    
+    if 'adb' in df.columns:
+        df.plot(y=['nii/adb'], figsize=size, ylim = (0,None), legend=True, title='Margin in percent', grid=True)    
     if 'provision' in df.columns:
         print('Provision - total: {0:.0f}'.format(df['provision'].sum()))
         print('Provision - monthly average: {0:.0f}'.format(df['provision'].mean()))
         print('Provision to TOI: {0:.1f}%'.format(df['provision'].sum()/df['toi'].sum()*100))
         df.plot(y=['nii', 'nfi','toi', 'provision'], figsize = size, ylim = (0,None), title='TOI & Provision', grid=True)
         plt.show()
-        toi_net_prov_to_adb = (df['toi'] - df['provision'])/df['adb']*12*100
-        toi_net_prov_to_adb.plot(figsize=size, ylim = (0,None), title='TOI net Provision as % of ADB', grid=True)
+        df.plot(y = ['toi_net_provision/adb','provision/adb','provision/toi'], figsize=size, ylim = (0,None), title='Provision ratios', grid=True)
         plt.show()
     else: 
         df.plot(y=['nii', 'nfi','toi'], figsize=size, ylim = (0,None), title='TOI in VND bn', grid=True)
         plt.show()
     if 'disbursement' in df.columns:
-        print('\n------------------------------------------------------') 
-        print('SALES')
+        printmd('---')    
+        printmd('**DISBURSEMENT**') 
         print('Disbursement - total: {0:0f}'.format(df['disbursement'].sum()))
         print('Disbursement - monthly average: {0:0f}'.format(df['disbursement'].mean()))
         df.plot(y=['disbursement'], figsize=size, ylim = (0,None), title='Disbursement in VND bn', grid=True)
         plt.show()
     if 'monthly_issued' in df.columns:
-        print('\n------------------------------------------------------')  
-        print('SALES')
-        print('Card spend - total: {0:.0f}'.format(df['total_spend'].sum()))
-        print('Card spend - monthly average: {0:.0f}'.format(df['total_spend'].mean()))
-        df.plot(y=['total_spend'], figsize=size, ylim = (0,None), grid=True)
+        printmd('---')    
+        printmd('**CARD ISSUANCE & SPEND**') 
+        print('Card spend in VND bn - total: {0:.0f}'.format(df['total_spend'].sum()))
+        print('Card spend in VND bn - monthly average: {0:.0f}'.format(df['total_spend'].mean()))
+        df.plot(y=['total_spend'], figsize=size, ylim = (0,None), grid=True, title = 'Total spending')
+        plt.show()
+        print('Spend per activated card in VND mn - monthly average: {0:.1f}'.format(df['spend/activated card'].mean()))
+        df.plot(y=['spend/activated card'], figsize=size, ylim = (0,None), grid=True, title = 'Monthly spend per activated card in VND mn')
         plt.show()
         print('Cards issuance - total: {0:.0f}'.format(df['monthly_issued'].sum()))
         print('Cards issuance - monthly average: {0:.0f}'.format(df['monthly_issued'].mean()))
@@ -1025,37 +1028,42 @@ def visualize(df, size=(12,4)):
         print('Accumulative card activated: {0:.0f}'.format(df['total_activated'].iloc[-1]))
         df.plot(y=['monthly_issued'], figsize=size, ylim = (0,None), title='Monthly card issuance', grid=True)
         plt.show()
-    print()
-    print('\n------------------------------------------------------')  
-    print('FULL TABLE')
+        df.plot(y=['total_issued','total_activated'], figsize=size, ylim = (0,None), title='Accumulative cards', grid=True)
+        plt.show()
+    printmd('---')    
+    printmd('**FULL TABLE**') 
     display(df)
     
-def display_outputs(tuple_):
-    plt.style.use('fivethirtyeight')
+def print_charts(tuple_, name):
     total, class_to_out, prod_to_out, subprod_to_out = tuple_
-    print('PRODUCT TREE')
-    print('### Product class')
-    print((sorted(list(class_to_out.keys()))))
-    print('### Product')
-    print(sorted(list(prod_to_out.keys())))
-    print('### Subproduct')
-    print(sorted(list(subprod_to_out.keys())))
-    name = input('Copy-paste product class/product/subproduct you want to display in this box (or type: "all" or "show me everything")')
     if name in ['all', 'all products']:
-        print('ALL PRODUCTS')
+        printmd('# ALL PRODUCTS')
         print()
         visualize(total)
     elif name == 'show me everything':
         for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
             for key in sorted(list(dict_.keys())):
-                print('{}________________________________________'.format(key.upper()))
+                printmd('## {}'.format(key))
                 visualize(dict_[key])
     else:            
         for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
             if name in dict_.keys():
+                printmd('## {}'.format(name.upper()))
                 visualize(dict_[name])
                 print()
                 break
+    return None   
+
+def display_outputs(tuple_):
+    plt.style.use('fivethirtyeight')
+    total, class_to_out, prod_to_out, subprod_to_out = tuple_
+    printmd('*Copy-paste class/product/subproduct you want to display in this box (or type: "all" or "show me everything*')
+    name = input()
+    print_charts(tuple_,name)
     return None    
     
+
+
+
+
 
