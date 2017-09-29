@@ -610,7 +610,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[ ]:
+# In[76]:
 
 
 def inputs_cc(file):
@@ -771,6 +771,7 @@ def outputs_cc(file):
     provision = provision_expense_GB.sum(axis=0) + provision_expense_bb
     
     return {'month': timeline['months_names'],
+            'total_issued': total_issued,
             'total_activated': total_activated,
             'total_spend': total_spend,
             'eop': eop,
@@ -785,7 +786,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[ ]:
+# In[77]:
 
 
 def inputs_deposit(file):
@@ -838,7 +839,7 @@ def outputs_deposit(file):
 
 # ## Investment
 
-# In[ ]:
+# In[78]:
 
 
 def inputs_investment(file):
@@ -866,7 +867,7 @@ def outputs_investment(file):
 
 # ## Insurance
 
-# In[ ]:
+# In[79]:
 
 
 def inputs_insurance(file):
@@ -894,7 +895,7 @@ def outputs_insurance(file):
 
 # ## Run
 
-# In[ ]:
+# In[129]:
 
 
 def get_files_and_paths(folder):
@@ -971,42 +972,57 @@ def all_outputs(folder, year=2018):
     return total, class_to_out, prod_to_out, subprod_to_out
 
 def visualize(df, size=(9,4)):
-    print('### Summary ###')
     if 'eop' in df.columns:
+        print('\nBALANCE SHEET___________________________________________________')
         print('EOP balance, last month: {0:.0f}'.format(df['eop'].iloc[-1]))
-        df.plot(y=['eop', 'adb'], figsize=size, ylim = (0,None))
+        df.plot(y=['eop', 'adb'], figsize=size, ylim = (0,None), title='Balance')
         plt.show()
+    print('\nREVENUE___________________________________________________')    
     print('TOI - total: {0:.1f}'.format(df['toi'].sum()))
     print('TOI - monthly_average: {0:.1f}'.format(df['toi'].mean()))
     print('NII - total: {0:.1f}'.format(df['nii'].sum()))
     print('NII - monthly_average: {0:.1f}'.format(df['nii'].mean()))
     print('NFI - total: {0:.1f}'.format(df['nfi'].sum()))
-    print('NFI - monthly_average: {0:.1f}'.format(df['nfi'].mean()))
+    print('NFI - monthly_average: {0:.1f}'.format(df['nfi'].mean())) 
+    if 'eop' in df.columns:
+        toi_to_adb = df['toi']/df['adb']*12*100
+        nii_to_adb = df['nii']/df['adb']*12*100
+        df2 = pd.concat([toi_to_adb, nii_to_adb], axis=1)
+        df2.columns = ['toi_to_adb', 'nii_to_adb']
+        df2.plot(figsize=size, ylim = (0,None), legend=True, title='Margin')    
     if 'provision' in df.columns:
+        print('\nRISK___________________________________________________')
         print('Provision - total: {0:.0f}'.format(df['provision'].sum()))
         print('Provision - monthly average: {0:.0f}'.format(df['provision'].mean()))
-        print('Provision as % of TOI: {0:.1f}%'.format(df['provision'].sum() / df['toi'].sum() * 100))
+        print('Provision to TOI: {0:.1f}%'.format(df['provision'].sum()/df['toi'].sum()*100))
         df.plot(y=['nii', 'nfi','toi', 'provision'], figsize = size, ylim = (0,None))
+        plt.show()
+        toi_net_prov_to_adb = (df['toi'] - df['provision'])/df['adb']*12*100
+        toi_net_prov_to_adb.plot(figsize=size, ylim = (0,None), title='TOI net Provision as % of ADB')
         plt.show()
     else: 
         df.plot(y=['nii', 'nfi','toi'], figsize=size, ylim = (0,None))
         plt.show()
     if 'disbursement' in df.columns:
+        print('\nSALES___________________________________________________')
         print('Disbursement - total: {0:0f}'.format(df['disbursement'].sum()))
         print('Disbursement - monthly average: {0:0f}'.format(df['disbursement'].mean()))
-        df.plot(y=['disbursement'], figsize=size, ylim = (0,None))
+        df.plot(y=['disbursement'], figsize=size, ylim = (0,None), title='Disbursement in VND bn')
         plt.show()
     if 'monthly_issued' in df.columns:
+        print('\nSALES___________________________________________________')
         print('Card spend - total: {0:.0f}'.format(df['total_spend'].sum()))
         print('Card spend - monthly average: {0:.0f}'.format(df['total_spend'].mean()))
         df.plot(y=['total_spend'], figsize=size, ylim = (0,None))
         plt.show()
         print('Cards issuance - total: {0:.0f}'.format(df['monthly_issued'].sum()))
         print('Cards issuance - monthly average: {0:.0f}'.format(df['monthly_issued'].mean()))
-        df.plot(y=['monthly_issued'], figsize=size, ylim = (0,None))
+        print('Accumulative card issued: {0:.0f}'.format(df['total_issued'].iloc[-1]))
+        print('Accumulative card activated: {0:.0f}'.format(df['total_activated'].iloc[-1]))
+        df.plot(y=['monthly_issued'], figsize=size, ylim = (0,None), title='Monthly card issuance')
         plt.show()
     print()
-    print('### Full Table ###')
+    print('FULL TABLE___________________________________________________')
     display(df)
     
 def display_outputs(tuple_):
@@ -1018,50 +1034,29 @@ def display_outputs(tuple_):
     print(sorted(list(prod_to_out.keys())))
     print('### Subproduct')
     print(sorted(list(subprod_to_out.keys())))
-    print('Copy-paste product class/product/subproduct you want to display in this box (or type: all)')
-    name = input('Copy-paste product class/product/subproduct you want to display in this box (or type: all)')
-    if name in ['all', 'all products', 'total']:
+    name = input('Copy-paste product class/product/subproduct you want to display in this box (or type: "all" or "show me everything")')
+    if name in ['all', 'all products']:
         print('ALL PRODUCTS')
         print()
-        visualize(total) 
-    for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
-        if name in dict_.keys():
-            print('___{}________________________________________'.format(name.upper()))
-            visualize(dict_[name])
-            print()
-            break
+        visualize(total)
+    elif name == 'show me everything':
+        for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
+            for key in sorted(list(dict_.keys())):
+                print('___{}________________________________________'.format(key.upper()))
+                visualize(dict_[key])
+    else:            
+        for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
+            if name in dict_.keys():
+                print('___{}________________________________________'.format(name.upper()))
+                visualize(dict_[name])
+                print()
+                break
     return None    
-
-def run_model(folder, size=(9,4), year=2018):
-    # Display aggregate of all productsd
-    total, class_to_out, prod_to_out, subprod_to_out = all_outputs(folder, year=year)
-    print('------------------------------------------------------------------------------------------------------')
-    print('ALL PRODUCTS')
-    print()
-    visualize(total, size)        
-    print()
-    print('------------------------------------------------------------------------------------------------------')
-    print('BY PRODUCT CLASS')
-    print()
-    for key, value in class_to_out.items():
-        print('___{}________________________________________'.format(key.upper()))
-        visualize(value, size)
-        print()
-    print()
-    print('------------------------------------------------------------------------------------------------------')
-    print('BY PRODUCT')
-    print()
-    for key, value in prod_to_out.items():
-        print('___{}________________________________________'.format(key.upper()))
-        visualize(value, size)
-        print()
-    print()
-    print('------------------------------------------------------------------------------------------------------')
-    print('BY SUBPRODUCT')
-    for key, value in subprod_to_out.items():
-        print('___{}________________________________________'.format(key.upper()))
-        visualize(value, size) 
-        print()
-    return None
     
+
+
+# In[ ]:
+
+
+
 
