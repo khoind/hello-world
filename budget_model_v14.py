@@ -3,7 +3,7 @@
 
 # # Set up
 
-# In[1]:
+# In[ ]:
 
 
 import numpy as np
@@ -16,7 +16,7 @@ from IPython.display import display
 
 # # Common functions
 
-# In[2]:
+# In[ ]:
 
 
 def forecast_window(start_month, start_year, num_months):
@@ -83,7 +83,7 @@ def add_provision_to_toi(table):
 
 # # Loan functions
 
-# In[3]:
+# In[ ]:
 
 
 def inputs_loan(file, book):
@@ -458,7 +458,7 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[4]:
+# In[ ]:
 
 
 def inputs_od(file):
@@ -610,7 +610,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[5]:
+# In[ ]:
 
 
 def inputs_cc(file):
@@ -785,7 +785,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[6]:
+# In[ ]:
 
 
 def inputs_deposit(file):
@@ -838,7 +838,7 @@ def outputs_deposit(file):
 
 # ## Investment
 
-# In[7]:
+# In[ ]:
 
 
 def inputs_investment(file):
@@ -866,7 +866,7 @@ def outputs_investment(file):
 
 # ## Insurance
 
-# In[8]:
+# In[ ]:
 
 
 def inputs_insurance(file):
@@ -894,7 +894,7 @@ def outputs_insurance(file):
 
 # ## Run
 
-# In[9]:
+# In[ ]:
 
 
 def get_files_and_paths(folder):
@@ -945,6 +945,7 @@ def all_outputs(folder, year=2018):
     for file in files:
         # Read meta information
         product_class, product, subproduct = read_type(file)[0], read_type(file)[1], read_type(file)[2]
+        subproduct = product + '/' + subproduct
         # Calculate outputs
         output = model_dict[product_class](file)
         # Change index to timestamp, drop historical months
@@ -1008,18 +1009,17 @@ def visualize(df, size=(9,4)):
     print('### Full Table ###')
     display(df)
     
-
 def display_outputs(tuple_):
     total, class_to_out, prod_to_out, subprod_to_out = tuple_
     print('PRODUCT TREE')
     print('### Product class')
-    print(list(class_to_out.keys()))
+    print((sorted(list(class_to_out.keys()))))
     print('### Product')
-    print(list(prod_to_out.keys()))
+    print(sorted(list(prod_to_out.keys())))
     print('### Subproduct')
-    print(list(subprod_to_out.keys()))
+    print(sorted(list(subprod_to_out.keys())))
     print('Copy-paste product class/product/subproduct you want to display in this box (or type: all)')
-    name = input()
+    name = input('Copy-paste product class/product/subproduct you want to display in this box (or type: all)')
     if name in ['all', 'all products', 'total']:
         print('ALL PRODUCTS')
         print()
@@ -1032,7 +1032,7 @@ def display_outputs(tuple_):
             break
     return None    
 
-def run_model(folder, size=(9,4), year=None):
+def run_model(folder, size=(9,4), year=2018):
     # Display aggregate of all productsd
     total, class_to_out, prod_to_out, subprod_to_out = all_outputs(folder, year=year)
     print('------------------------------------------------------------------------------------------------------')
@@ -1064,10 +1064,4 @@ def run_model(folder, size=(9,4), year=None):
         print()
     return None
     
-
-
-# In[ ]:
-
-
-
 
