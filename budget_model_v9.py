@@ -3,7 +3,7 @@
 
 # # Set up
 
-# In[2]:
+# In[1]:
 
 
 import numpy as np
@@ -16,7 +16,7 @@ from IPython.display import display
 
 # # Common functions
 
-# In[3]:
+# In[2]:
 
 
 def forecast_window(start_month, start_year, num_months):
@@ -83,7 +83,7 @@ def add_provision_to_toi(table):
 
 # # Loan functions
 
-# In[241]:
+# In[3]:
 
 
 def inputs_loan(file, book):
@@ -185,29 +185,40 @@ def outputs_loan_by_book(file, book):
         bkt_netflow = bkt_outflow - bkt_inflow
 
         ## Net payment from all buckets
-        prepayment[month] = enr[month-1]['B0'] * inputs['early_termination_rate'][month]
-
+       
         ppmt_impact_prepayment[month] = prepayment[month-1]/inputs['tenor'][month] + ppmt_impact_prepayment[month-1]
 
+        ppmt_impact_outflow[month] = bkt_outflow[month-1]['B0']/inputs['tenor'][month] + ppmt_impact_outflow[month-1]
+
+        ppmt_impact_inflow[month] = bkt_inflow.loc['B0'][month-1]/inputs['tenor'][month] + ppmt_impact_inflow[month-1]
+
+
         if book == 'new':
-            if inputs['payment_method'].lower() == 'eqp':
-                ppmt_impact_disbursement[month] = (inputs['disbursement'][month-1]/inputs['tenor'][month] + 
+                if month < inputs['grace_period'][month]:
+                    ppmt_impact_disbursement[month] = 0
+                else:
+                    if inputs['payment_method'].lower() == 'eqp':
+                        ppmt_impact_disbursement[month] = (inputs['disbursement'][month-1]/inputs['tenor'][month] + 
                                                                ppmt_impact_disbursement[month-1])
-            else:
-                ppmt_impact_disbursement[month] = np.ppmt(rate=inputs['lifetime_interest'][month], 
-                                                                      per=month/2, 
+                    else:
+                        if inputs['payment_method'].lower() == 'emi':
+                            ppmt_impact_disbursement[month] = np.ppmt(rate=inputs['lifetime_interest'][month]/12, 
+                                                                      per=(month+1)/2, 
                                                                       nper=inputs['tenor'][month], 
-                                                                      pv=accum_disbursement[month])
-
-        ppmt_impact_outflow[month] = bkt_outflow[month]['B0']/inputs['tenor'][month] + ppmt_impact_outflow[month-1]
-
-        ppmt_impact_inflow[month] = bkt_inflow.loc['B0'][month]/inputs['tenor'][month] + ppmt_impact_inflow[month-1]
-
-
+                                                                      pv=accum_disbursement[month-1])*(-1)
+                        else:
+                            if month < inputs['tenor'][month]:
+                                ppmt_impact_disbursement[month] = 0
+                            else:
+                                ppmt_impact_disbursement[month] = inputs['disbursement'][month-inputs['tenor'][month]]
+                                
+        
         ppmt_impact_net = (-ppmt_impact_inflow + ppmt_impact_outflow
                        + ppmt_impact_disbursement - ppmt_impact_prepayment)
-
+        
         ppmt_scheduled = inputs['system_payment_forecast'] + ppmt_impact_net
+
+        prepayment[month] = (enr[month-1]['B0'] - ppmt_scheduled[month]*(1-inputs['unpaid_by_schedule_rate'][month])) * inputs['early_termination_rate'][month]
 
         ppmt_b0 = - ppmt_scheduled * (1 - inputs['unpaid_by_schedule_rate']) - prepayment
 
@@ -386,7 +397,7 @@ def outputs_loan_by_book(file, book):
     nii_commission = inputs['disbursement'] * inputs['nii_commission_rate']
 
     ## Total other NII
-    nii_other = nii_prepayment_fee + nii_commission
+    nii_other = nii_prepayment_fee + nii_commission + inputs['other_nii_limit']+ inputs['other_nii_other']
     
     ## Total NII
     nii = cii + ftp + nii_other
@@ -425,7 +436,7 @@ def outputs_loan_by_book(file, book):
 
     ## Total provision
     provision = provision_expense_GB.sum(axis=0) + provision_expense_bb
-
+    
     return {'eop': eop,
             'provision': provision,
             'adb': adb,
@@ -447,7 +458,7 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[344]:
+# In[4]:
 
 
 def inputs_od(file):
@@ -512,7 +523,7 @@ def outputs_od(file):
     
     ## New sales to buckets
     newsale_to_bkt = inputs['disbursement'] * inputs['flow_rate'].loc['new_sale']
-    newsale_to_bkt.loc['B0'] = -(inputs['disbursement'] + newsale_to_bkt.loc['B1A':'other'].sum() + inputs['disbursement'] * inputs['paid_off_rate'].loc['new_sale'] + ppmt_newsale)
+    newsale_to_bkt.loc['B0'] = -(inputs['disbursement'] + newsale_to_bkt.loc['B1A':'other'].sum() + ppmt_newsale)
 
     # New sales to bad bank
     newsale_to_bb = inputs['newsale_to_bb_rate'] * inputs['disbursement']
@@ -538,7 +549,7 @@ def outputs_od(file):
         bkt_increase_in_month[month]['B0'] = inputs['disbursement'][month]
         
         ## ENR
-        enr[month] = enr[month-1] + bkt_outflow[month] - bkt_inflow[month] + ppmt_all_bkts[month] + newsale_to_bkt[month] + bkt_increase_in_month[month]
+        enr[month] = enr[month-1] + bkt_outflow[month] - bkt_inflow[month] + ppmt_all_bkts[month] - newsale_to_bkt[month] + bkt_increase_in_month[month]
 
     # EOP balance    
     eop = enr.loc[good_bank_buckets].sum(axis=0)
@@ -599,7 +610,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[348]:
+# In[5]:
 
 
 def inputs_cc(file):
@@ -609,8 +620,15 @@ def inputs_cc(file):
     inputs = {index: other_inputs.loc[index] for index in other_inputs.index.tolist()}
     # Read ENR historical
     inputs['enr_historical'] = file.parse(sheetname='enr_historical').fillna(value=0)
+    # Read EMI proportion by tenor
+    inputs['emi_by_tenor'] = file.parse(sheetname='emi_by_tenor').fillna(value=0)
+    # Read list of EMI tenors
+    inputs['emi_tenors'] = file.parse(sheetname='emi_tenors').fillna(value=0)
+    # Read EMI new historical
+    inputs['emi_new_historical_tenors'] = file.parse(sheetname='emi_new_historical_tenors').fillna(value=0)
     # Read netflow
-    inputs['netflow_rate'] = file.parse(sheetname='netflow_rate').fillna(value=0)
+    inputs['netflow_rate_enr'] = file.parse(sheetname='netflow_rate_enr').fillna(value=0)
+    inputs['netflow_rate_provision'] = file.parse(sheetname='netflow_rate_provision').fillna(value=0)
     # Read recovery rate
     inputs['recovery_rate'] = file.parse(sheetname='recovery_rate').fillna(value=0)    
     return inputs
@@ -632,6 +650,11 @@ def outputs_cc(file):
     enr = pd.DataFrame(np.zeros([len(all_buckets), len(timeline['months_extended'])]),
                       index=all_buckets, columns=timeline['months_extended'])
     enr[-1] = inputs['enr_historical'][-1]*1.0
+    
+    eop_emi = inputs['emi_by_tenor'] * 0.0
+    eop_emi[-1] = inputs['emi_tenors']['eop_historical'] * 1
+    
+    emi_schedule_pmt = inputs['emi_by_tenor'] * 0.0
         
     # ---------BALANCE SHEET---------  
     
@@ -647,15 +670,32 @@ def outputs_cc(file):
     onl_spend = total_activated * inputs['onl_spend_per_activated']
     cash_spend = total_activated * inputs['cash_spend_per_activated']
     total_spend = retail_spend + onl_spend + cash_spend
+    total_spend[-1] = inputs['total_spend_historical'][-1] * 1
     
     ## Average net flow rate
-    avg_netflow = inputs['netflow_rate'].rolling(window=12, min_periods=1, axis=1).mean()
-     
+    avg_netflow_enr = inputs['netflow_rate_enr'].rolling(window=1, min_periods=1, axis=1).mean()
+    avg_netflow_provision = inputs['netflow_rate_provision'].rolling(window=1, min_periods=1, axis=1).mean()
+    
+    ## EMI new
+    emi_new = inputs['emi_to_spending_pc'] * total_spend
+    emi_new_by_tenor = emi_new * inputs['emi_by_tenor']
+    historical_months = [c for c in inputs['emi_new_historical_tenors'].columns.tolist() if c <0]
+    emi_new_by_tenor[historical_months] = inputs['emi_new_historical_tenors'][historical_months] * 1
+    
+    # EMI principle payment
+    emi_schedule_pmt = emi_new_by_tenor * 0.0
+    for tenor in emi_schedule_pmt.index:
+        window = int(round(inputs['emi_tenors']['months'][tenor]))
+        emi_schedule_pmt.loc[tenor] = emi_new_by_tenor.loc[tenor].rolling(window=window, min_periods=1).sum() / window
+    
     # ENR
     for month in timeline['months']:
-        enr[month]['B0'] = (enr[month-1]['B0'] + total_spend[month]) * inputs['revolving_rate'][month]
+        # EMI
+        eop_emi[month] = eop_emi[month-1] + emi_new_by_tenor[month] - emi_schedule_pmt[month]
+        # ENR
+        enr[month]['B0'] = (enr[month-1]['B0'] + (total_spend[month] * (1 - inputs['emi_to_spending_pc'][month]))) * inputs['revolving_rate'][month] + eop_emi[month].sum()
         for i in range(1,len(all_buckets)):
-             enr[month][all_buckets[i]] = enr[month-1][all_buckets[i-1]] * avg_netflow[month][all_buckets[i-1]]
+             enr[month][all_buckets[i]] = enr[month-1][all_buckets[i-1]] * avg_netflow_enr[month][all_buckets[i-1]]
     
     # EOP
     eop = enr.loc['B0':'B3'].sum()
@@ -666,15 +706,17 @@ def outputs_cc(file):
     
     # CII
     cii_normal = (adb * inputs['cii_rate']/360 * timeline['days_in_month'] +
-                  (enr['B1':'B3'].shift(1).sum() * inputs['billing_day'] + 
-                   enr['B1':'B3'].sum() * (timeline['days_in_month'] - inputs['billing_day'])) / 
+                  (enr['B1':'B13'].shift(1).sum() * inputs['billing_day'] + 
+                   enr['B1':'B13'].sum() * (timeline['days_in_month'] - inputs['billing_day'])) / 
                   timeline['days_in_month'] *
                   inputs['cii_rate']/2/360 * timeline['days_in_month'] +
-                  cash_spend * (1 - inputs['revolving_rate']) * inputs['cii_rate']/360 * timeline['days_in_month'])
+                  cash_spend * inputs['cii_rate']/360 * timeline['days_in_month'])
     
     cii_adjusted = - cii_normal*(1-inputs['revolving_rate'])
     
-    cii = cii_normal + cii_adjusted
+    cii_emi = eop_emi.sum() * inputs['emi_rate']
+    
+    cii = cii_normal + cii_adjusted + cii_emi
     
     # FTP
     ftp = adb * inputs['ftp_rate']/360 * timeline['days_in_month']
@@ -685,30 +727,30 @@ def outputs_cc(file):
     # NFI
     ## Gross fee income
     interchange_fee = (retail_spend + onl_spend) * inputs['interchange_rate']
-    annual_fee = interchange_fee * inputs['annual_fee_to_gross'] / inputs['interchange_to_gross']
-    late_payment_fee = interchange_fee * inputs['late_payment_to_gross'] / inputs['interchange_to_gross']
-    fx_fee = interchange_fee * inputs['fx_fee_to_gross'] / inputs['interchange_to_gross']
-    cash_advance_fee = interchange_fee * inputs['cash_advance_to_gross'] / inputs['interchange_to_gross']
+    annual_fee = (inputs['annual_fee_rate'] * 
+                  (total_activated * inputs['annual_renew_pc'] + inputs['monthly_issued'] * inputs['activation_rate']) *
+                  (1 - inputs['annual_fee_waiver_for_new']))
+    late_payment_fee = inputs['late_payment_charge_rate'] * enr.loc['B1':'B3'].sum()
+    fx_fee = inputs['fx_fee_rate'] * total_spend * inputs['oversea_spending_pc']
+    cash_advance_fee = inputs['cash_advance_rate'] * cash_spend
     installment_fee = interchange_fee * inputs['installment_to_gross'] / inputs['interchange_to_gross']
     misc = interchange_fee * inputs['misc_to_gross'] / inputs['interchange_to_gross']
-    gross_fee = interchange_fee + annual_fee + late_payment_fee + fx_fee + cash_advance_fee + installment_fee + misc
     ## Fee expense
-    mc_expense = -interchange_fee * inputs['mc_expense_to_interchange']
-    mc_guarantee = mc_expense / inputs['mc_expense_rate'] * inputs['mc_guarantee_rate']
-    sms_expense = mc_expense / inputs['mc_expense_rate'] * inputs['sms_banking_rate']
-    #customer_reward_expense = - gross_fee
+    mc_expense = -interchange_fee * inputs['mcbs_to_interchange']
+    mc_guarantee = -inputs['mc_guarantee_rate'] * total_issued
+    sms_expense = -inputs['sms_banking_rate'] * total_activated
+    customer_reward_expense = -inputs['customer_reward_rate'] * total_spend
     
     ## Net fee income
     '''To be changed'''
-    nfi = interchange_fee *100/59
-    
+    nfi = interchange_fee + annual_fee + late_payment_fee + fx_fee + cash_advance_fee + installment_fee + misc + mc_expense + mc_guarantee + sms_expense + customer_reward_expense
     # TOI
     toi = nii + nfi
     
     #---------PROVISION---------
 
     ## Probability of default
-    default_prob = avg_netflow.iloc[::-1].iloc[-13:]
+    default_prob = avg_netflow_provision.iloc[::-1].iloc[-13:]
     default_prob = default_prob.rolling(window=13, min_periods=1, axis=0).apply(np.prod)
     default_prob = default_prob.iloc[::-1].loc[:,-5:]
 
@@ -721,7 +763,7 @@ def outputs_cc(file):
     provision_GB = enr.loc[good_bank_buckets].T.shift(1).T * provision_rate_GB.T.shift(1).T
 
     provision_expense_GB = provision_GB - provision_GB.shift(1,axis=1)  
-
+    
     ## Provision to bad bank
     provision_expense_bb = enr.loc['B6'].shift(1) * provision_rate.loc['B6'].shift(1)
 
@@ -738,11 +780,12 @@ def outputs_cc(file):
             'toi': toi,
             'monthly_issued': inputs['monthly_issued'],
             'provision': provision}
+            
 
 
 # # TD & CASA
 
-# In[349]:
+# In[6]:
 
 
 def inputs_deposit(file):
@@ -793,7 +836,9 @@ def outputs_deposit(file):
     
 
 
-# In[350]:
+# ## Investment
+
+# In[7]:
 
 
 def inputs_investment(file):
@@ -819,9 +864,37 @@ def outputs_investment(file):
     
 
 
+# ## Insurance
+
+# In[8]:
+
+
+def inputs_insurance(file):
+    other_inputs = file.parse(sheetname='other_inputs')
+    other_inputs = other_inputs.fillna(value=0)
+    inputs = {index: other_inputs.loc[index] for index in other_inputs.index.tolist()}
+    return inputs
+    
+def outputs_insurance(file):    
+    '''Load inputs'''
+    timeline = generate_timeline(file)
+    inputs = inputs_insurance(file)
+    
+    '''Calculations'''
+    nfi = (inputs['number_contract'] * inputs['ape_per_contract'] * 
+           inputs['premium_to_ape'] * inputs['commission_to_premium'] * inputs['nfi_to_commission'])
+    nii = nfi*0
+    toi = nfi
+    
+    return {'month': timeline['months_names'],
+            'nfi': nfi,
+            'nii': nii,
+            'toi': toi}
+
+
 # ## Run
 
-# In[363]:
+# In[9]:
 
 
 def get_files_and_paths(folder):
@@ -842,7 +915,7 @@ def read_type(file):
     return file.parse(sheetname='classify').loc[0].apply(transform)
 
 model_dict = {'loan': outputs_loan, 'overdraft': outputs_od, 'creditcard': outputs_cc, 
-              'deposit': outputs_deposit,'investment': outputs_investment}
+              'deposit': outputs_deposit,'investment': outputs_investment, 'insurance': outputs_insurance}
 
 def add_dfs(list_of_dfs):
     # Add data frames in a list
@@ -861,7 +934,7 @@ def aggregate(outputs_map):
         outputs_map[key] = add_dfs(output_list)
     return outputs_map   
 
-def all_outputs(folder, year=None):
+def all_outputs(folder, year=2018):
     files = get_files_and_paths(folder)[0]
     # Run model on sub products
     outputs = list()
@@ -896,7 +969,7 @@ def all_outputs(folder, year=None):
     total = add_dfs(list(class_to_out.values()))
     return total, class_to_out, prod_to_out, subprod_to_out
 
-def visualize(df, size):
+def visualize(df, size=(9,4)):
     print('### Summary ###')
     if 'eop' in df.columns:
         print('EOP balance, last month: {0:.0f}'.format(df['eop'].iloc[-1]))
@@ -936,12 +1009,36 @@ def visualize(df, size):
     display(df)
     
 
-def run_model(folder, size, year=None):
+def display_outputs(tuple_):
+    total, class_to_out, prod_to_out, subprod_to_out = tuple_
+    print('PRODUCT TREE')
+    print('### Product class')
+    print(list(class_to_out.keys()))
+    print('### Product')
+    print(list(prod_to_out.keys()))
+    print('### Subproduct')
+    print(list(subprod_to_out.keys()))
+    print('Copy-paste product class/product/subproduct you want to display in this box (or type: all)')
+    name = input()
+    if name in ['all', 'all products', 'total']:
+        print('ALL PRODUCTS')
+        print()
+        visualize(total) 
+    for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
+        if name in dict_.keys():
+            print('___{}________________________________________'.format(name.upper()))
+            visualize(dict_[name])
+            print()
+            break
+    return None    
+
+def run_model(folder, size=(9,4), year=None):
+    # Display aggregate of all productsd
     total, class_to_out, prod_to_out, subprod_to_out = all_outputs(folder, year=year)
     print('------------------------------------------------------------------------------------------------------')
     print('ALL PRODUCTS')
     print()
-    visualize(total, size)
+    visualize(total, size)        
     print()
     print('------------------------------------------------------------------------------------------------------')
     print('BY PRODUCT CLASS')
@@ -967,4 +1064,10 @@ def run_model(folder, size, year=None):
         print()
     return None
     
+
+
+# In[ ]:
+
+
+
 
