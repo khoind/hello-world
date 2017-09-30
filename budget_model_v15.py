@@ -926,7 +926,7 @@ def printmd(string):
     '''
     display(Markdown(string))   
     
-def export_outputs(folder, tuple_):
+def export(folder, tuple_):
     total, class_to_out, prod_to_out, subprod_to_out = tuple_
     writer = pd.ExcelWriter(folder+'_outputs'+'.xlsx', engine='xlsxwriter')
     total.to_excel(writer, 'total')
