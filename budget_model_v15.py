@@ -3,7 +3,7 @@
 
 # # Set up
 
-# In[193]:
+# In[354]:
 
 
 import numpy as np
@@ -12,6 +12,7 @@ import calendar
 import matplotlib.pyplot as plt
 import os
 from IPython.display import display, Markdown
+import xlsxwriter
 
 
 # # Common functions
@@ -869,7 +870,7 @@ def outputs_insurance(file):
 
 # ## Run
 
-# In[347]:
+# In[371]:
 
 
 def get_files_and_paths(folder):
@@ -941,7 +942,7 @@ def all_outputs(folder, year=2018):
     for file in files:
         # Read meta information
         product_class, product, subproduct = read_type(file)[0], read_type(file)[1], read_type(file)[2]
-        subproduct = product + '/' + subproduct
+        subproduct = product + '_' + subproduct
         # Calculate outputs
         output = model_dict[product_class](file)
         # Change index to timestamp, drop historical months
@@ -1052,8 +1053,7 @@ def print_charts(tuple_, name):
                 printmd('## {}'.format(name.upper()))
                 visualize(dict_[name])
                 print()
-                break
-    return None   
+                break  
 
 def display_outputs(tuple_):
     plt.style.use('fivethirtyeight')
@@ -1061,6 +1061,14 @@ def display_outputs(tuple_):
     printmd('*Copy-paste class/product/subproduct you want to display in this box (or type: "all" or "show me everything*')
     name = input()
     print_charts(tuple_,name)
-    return None    
+
+def export_outputs(folder, tuple_):
+    total, class_to_out, prod_to_out, subprod_to_out = tuple_
+    writer = pd.ExcelWriter(folder+'_outputs'+'.xlsx', engine='xlsxwriter')
+    total.to_excel(writer, 'total')
+    for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
+        for key in sorted(list(dict_.keys())):
+            dict_[key].to_excel(writer, key[:min(len(key),30)])
+    writer.save()
     
 
