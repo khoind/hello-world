@@ -926,12 +926,16 @@ def printmd(string):
     '''
     display(Markdown(string))   
     
-from ipywidgets import interact, interactive, fixed, interact_manual
+def export_outputs(folder, tuple_):
+    total, class_to_out, prod_to_out, subprod_to_out = tuple_
+    writer = pd.ExcelWriter(folder+'_outputs'+'.xlsx', engine='xlsxwriter')
+    total.to_excel(writer, 'total')
+    for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
+        for key in sorted(list(dict_.keys())):
+            dict_[key].to_excel(writer, key[:min(len(key),30)])
+    writer.save()   
 
-def f(x):
-     return x    
-
-def all_outputs(folder, year=2018):
+def all_outputs(folder, year=2018, save_to_excel=True):
     files = get_files_and_paths(folder)[0]
     # Run model on sub products
     outputs = list()
@@ -976,7 +980,11 @@ def all_outputs(folder, year=2018):
     print(prods)
     printmd('#### Subproduct')
     print(subprods)
-    return total, class_to_out, prod_to_out, subprod_to_out
+    # Save to excel
+    out = (total, class_to_out, prod_to_out, subprod_to_out)
+    if save_to_excel:
+        export(folder, out)
+    return out
 
 def visualize(df, size=(12,4)):
     if 'eop' in df.columns:
@@ -1036,8 +1044,9 @@ def visualize(df, size=(12,4)):
     printmd('**FULL TABLE**') 
     display(df)
     
-def print_charts(tuple_, name):
-    total, class_to_out, prod_to_out, subprod_to_out = tuple_
+def print_charts(out, name):
+    plt.style.use('seaborn-poster')
+    total, class_to_out, prod_to_out, subprod_to_out = out
     if name in ['all', 'all products']:
         printmd('# ALL PRODUCTS')
         print()
@@ -1055,20 +1064,10 @@ def print_charts(tuple_, name):
                 print()
                 break  
 
-def display_outputs(tuple_):
-    plt.style.use('fivethirtyeight')
-    total, class_to_out, prod_to_out, subprod_to_out = tuple_
+def display_outputs(out):
+    total, class_to_out, prod_to_out, subprod_to_out = out
     printmd('*Copy-paste class/product/subproduct you want to display in this box (or type: "all" or "show me everything*')
     name = input()
-    print_charts(tuple_,name)
-
-def export_outputs(folder, tuple_):
-    total, class_to_out, prod_to_out, subprod_to_out = tuple_
-    writer = pd.ExcelWriter(folder+'_outputs'+'.xlsx', engine='xlsxwriter')
-    total.to_excel(writer, 'total')
-    for dict_ in [class_to_out, prod_to_out, subprod_to_out]:
-        for key in sorted(list(dict_.keys())):
-            dict_[key].to_excel(writer, key[:min(len(key),30)])
-    writer.save()
+    print_charts(out,name)
     
 
