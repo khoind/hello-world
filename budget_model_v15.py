@@ -387,7 +387,7 @@ def outputs_loan_by_book(file, book):
     # ---------PROVISION---------
 
     ## Average net flow rate
-    avg_netflow = inputs['netflow_rate'].rolling(window=12, min_periods=1, axis=1).mean()
+    avg_netflow = inputs['netflow_rate'].rolling(window=1, min_periods=1, axis=1).mean()
 
     ## Probability of default
     default_prob = avg_netflow.iloc[::-1].iloc[-13:]
