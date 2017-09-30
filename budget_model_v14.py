@@ -739,7 +739,7 @@ def outputs_cc(file):
     provision_expense_GB = provision_GB - provision_GB.shift(1,axis=1)  
     
     ## Provision to bad bank
-    provision_expense_bb = enr.loc['B6'].shift(1) * provision_rate.loc['B6'].shift(1)
+    provision_expense_bb = enr.loc['B4'].shift(1) * provision_rate.loc['B4'].shift(1)
 
     ## Total provision
     provision = provision_expense_GB.sum(axis=0) + provision_expense_bb
@@ -1062,8 +1062,4 @@ def display_outputs(tuple_):
     print_charts(tuple_,name)
     return None    
     
-
-
-
-
 
