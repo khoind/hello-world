@@ -870,7 +870,7 @@ def outputs_insurance(file):
 
 # ## Run
 
-# In[371]:
+# In[379]:
 
 
 def get_files_and_paths(folder):
@@ -935,7 +935,7 @@ def export(folder, tuple_):
             dict_[key].to_excel(writer, key[:min(len(key),30)])
     writer.save()   
 
-def all_outputs(folder, year=2018, save_to_excel=True):
+def all_outputs(folder, year=2018, save_to_excel=False):
     files = get_files_and_paths(folder)[0]
     # Run model on sub products
     outputs = list()
@@ -986,7 +986,7 @@ def all_outputs(folder, year=2018, save_to_excel=True):
         export(folder, out)
     return out
 
-def visualize(df, size=(12,4)):
+def visualize(df, size=(10,4)):
     if 'eop' in df.columns:
         printmd('---')  
         printmd('**BALANCE SHEET**')
@@ -1045,6 +1045,7 @@ def visualize(df, size=(12,4)):
     display(df)
     
 def print_charts(out, name):
+    plt.set_cmap('cool')
     plt.style.use('seaborn-poster')
     total, class_to_out, prod_to_out, subprod_to_out = out
     if name in ['all', 'all products']:
