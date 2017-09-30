@@ -869,7 +869,7 @@ def outputs_insurance(file):
 
 # ## Run
 
-# In[341]:
+# In[347]:
 
 
 def get_files_and_paths(folder):
@@ -982,7 +982,7 @@ def visualize(df, size=(12,4)):
         printmd('---')  
         printmd('**BALANCE SHEET**')
         print('EOP balance, last month: {0:.0f}'.format(df['eop'].iloc[-1]))
-        df.plot(y=['eop', 'adb'], figsize=size, ylim = (0,None), title='Balance in VND bn', grid=True)
+        df.plot(y=['eop', 'adb'], figsize=size, ylim = (0,df['eop'].iloc[-1]*1.5), title='Balance in VND bn', grid=True)
         plt.show()
     printmd('---')    
     printmd('**REVENUE**') 
@@ -993,15 +993,16 @@ def visualize(df, size=(12,4)):
     print('NFI - total: {0:.1f}'.format(df['nfi'].sum()))
     print('NFI - monthly_average: {0:.1f}'.format(df['nfi'].mean())) 
     if 'adb' in df.columns:
-        df.plot(y=['nii/adb'], figsize=size, ylim = (0,None), legend=True, title='Margin in percent', grid=True)    
+        df.plot(y=['nii/adb'], figsize=size, ylim = (0,df['nii/adb'].mean()*2), legend=True, title='Margin in percent', grid=True)    
     if 'provision' in df.columns:
         print('Provision - total: {0:.0f}'.format(df['provision'].sum()))
         print('Provision - monthly average: {0:.0f}'.format(df['provision'].mean()))
         print('Provision to TOI: {0:.1f}%'.format(df['provision'].sum()/df['toi'].sum()*100))
         df.plot(y=['nii', 'nfi','toi', 'provision'], figsize = size, ylim = (0,None), title='TOI & Provision', grid=True)
         plt.show()
-        df.plot(y = ['toi_net_provision/adb','provision/adb','provision/toi'], figsize=size, ylim = (0,None), title='Provision ratios', grid=True)
+        df.plot(y = ['toi_net_provision/adb','provision/adb'], figsize=size, ylim = (0,df['toi_net_provision/adb'].mean()*3), title='TOI and Provision as % of ABD', grid=True)
         plt.show()
+        df.plot(y = ['provision/toi'], figsize=size, ylim = (0,100), title='Provision as % of TOI', grid=True)
     else: 
         df.plot(y=['nii', 'nfi','toi'], figsize=size, ylim = (0,None), title='TOI in VND bn', grid=True)
         plt.show()
@@ -1010,7 +1011,7 @@ def visualize(df, size=(12,4)):
         printmd('**DISBURSEMENT**') 
         print('Disbursement - total: {0:0f}'.format(df['disbursement'].sum()))
         print('Disbursement - monthly average: {0:0f}'.format(df['disbursement'].mean()))
-        df.plot(y=['disbursement'], figsize=size, ylim = (0,None), title='Disbursement in VND bn', grid=True)
+        df.plot(y=['disbursement'], figsize=size, ylim = (0,df['disbursement'].mean()*2), title='Disbursement in VND bn', grid=True)
         plt.show()
     if 'monthly_issued' in df.columns:
         printmd('---')    
@@ -1020,13 +1021,13 @@ def visualize(df, size=(12,4)):
         df.plot(y=['total_spend'], figsize=size, ylim = (0,None), grid=True, title = 'Total spending')
         plt.show()
         print('Spend per activated card in VND mn - monthly average: {0:.1f}'.format(df['spend/activated card'].mean()))
-        df.plot(y=['spend/activated card'], figsize=size, ylim = (0,None), grid=True, title = 'Monthly spend per activated card in VND mn')
+        df.plot(y=['spend/activated card'], figsize=size, ylim = (0,df['spend/activated card'].mean()*2), grid=True, title = 'Monthly spend per activated card in VND mn')
         plt.show()
         print('Cards issuance - total: {0:.0f}'.format(df['monthly_issued'].sum()))
         print('Cards issuance - monthly average: {0:.0f}'.format(df['monthly_issued'].mean()))
         print('Accumulative card issued: {0:.0f}'.format(df['total_issued'].iloc[-1]))
         print('Accumulative card activated: {0:.0f}'.format(df['total_activated'].iloc[-1]))
-        df.plot(y=['monthly_issued'], figsize=size, ylim = (0,None), title='Monthly card issuance', grid=True)
+        df.plot(y=['monthly_issued'], figsize=size, ylim = (0,df['monthly_issued'].mean()*2), title='Monthly card issuance', grid=True)
         plt.show()
         df.plot(y=['total_issued','total_activated'], figsize=size, ylim = (0,None), title='Accumulative cards', grid=True)
         plt.show()
