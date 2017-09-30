@@ -1046,7 +1046,7 @@ def visualize(df, size=(10,4)):
     
 def print_charts(out, name):
     plt.set_cmap('cool')
-    plt.style.use('Solarize_Light2')
+    #plt.style.use('Solarize_Light2')
     total, class_to_out, prod_to_out, subprod_to_out = out
     if name in ['all', 'all products']:
         printmd('# ALL PRODUCTS')
