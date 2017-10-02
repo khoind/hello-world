@@ -1065,17 +1065,6 @@ def display_outputs(out):
     
 
 
-# In[38]:
-
-out = all_outputs('division_20')
-
-
-# In[42]:
-
-display_outputs(out)
-
-
-# In[ ]:
 
 
 
