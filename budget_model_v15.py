@@ -3,8 +3,7 @@
 
 # # Set up
 
-# In[354]:
-
+# In[1]:
 
 import numpy as np
 import pandas as pd
@@ -17,8 +16,7 @@ import xlsxwriter
 
 # # Common functions
 
-# In[191]:
-
+# In[2]:
 
 def forecast_window(start_month, start_year, num_months):
     '''
@@ -58,8 +56,7 @@ def generate_timeline(file):
 
 # # Loan functions
 
-# In[132]:
-
+# In[29]:
 
 def inputs_loan(file, book):
     # Read other inputs
@@ -387,7 +384,7 @@ def outputs_loan_by_book(file, book):
     # ---------PROVISION---------
 
     ## Average net flow rate
-    avg_netflow = inputs['netflow_rate'].rolling(window=1, min_periods=1, axis=1).mean()
+    avg_netflow = inputs['netflow_rate'].rolling(window=12, min_periods=1, axis=1).mean()
 
     ## Probability of default
     default_prob = avg_netflow.iloc[::-1].iloc[-13:]
@@ -433,8 +430,7 @@ def outputs_loan(file):
 
 # ## Overdraft function
 
-# In[133]:
-
+# In[30]:
 
 def inputs_od(file):
     # Read other inputs
@@ -585,8 +581,7 @@ def outputs_od(file):
 
 # ## Credit Card functions
 
-# In[134]:
-
+# In[31]:
 
 def inputs_cc(file):
     # Read other inputs
@@ -761,8 +756,7 @@ def outputs_cc(file):
 
 # # TD & CASA
 
-# In[135]:
-
+# In[32]:
 
 def inputs_deposit(file):
     other_inputs = file.parse(sheetname='other_inputs')
@@ -814,8 +808,7 @@ def outputs_deposit(file):
 
 # ## Investment
 
-# In[136]:
-
+# In[33]:
 
 def inputs_investment(file):
     inputs = {}
@@ -842,8 +835,7 @@ def outputs_investment(file):
 
 # ## Insurance
 
-# In[137]:
-
+# In[34]:
 
 def inputs_insurance(file):
     other_inputs = file.parse(sheetname='other_inputs')
@@ -870,8 +862,7 @@ def outputs_insurance(file):
 
 # ## Run
 
-# In[379]:
-
+# In[35]:
 
 def get_files_and_paths(folder):
     files = []
@@ -1009,9 +1000,8 @@ def visualize(df, size=(10,4)):
         print('Provision to TOI: {0:.1f}%'.format(df['provision'].sum()/df['toi'].sum()*100))
         df.plot(y=['nii', 'nfi','toi', 'provision'], figsize = size, ylim = (0,None), title='TOI & Provision', grid=True)
         plt.show()
-        df.plot(y = ['toi_net_provision/adb','provision/adb'], figsize=size, ylim = (0,df['toi_net_provision/adb'].mean()*3), title='TOI and Provision as % of ABD', grid=True)
+        df.plot(y = ['provision/toi'], figsize=size, ylim = (0,150), title='Provision as % of TOI', grid=True)
         plt.show()
-        df.plot(y = ['provision/toi'], figsize=size, ylim = (0,100), title='Provision as % of TOI', grid=True)
     else: 
         df.plot(y=['nii', 'nfi','toi'], figsize=size, ylim = (0,None), title='TOI in VND bn', grid=True)
         plt.show()
@@ -1045,6 +1035,7 @@ def visualize(df, size=(10,4)):
     display(df)
     
 def print_charts(out, name):
+    plt.set_cmap('cool')
     plt.style.use('seaborn-poster')
     total, class_to_out, prod_to_out, subprod_to_out = out
     if name in ['all', 'all products']:
@@ -1067,7 +1058,24 @@ def print_charts(out, name):
 def display_outputs(out):
     total, class_to_out, prod_to_out, subprod_to_out = out
     printmd('*Copy-paste class/product/subproduct you want to display in this box (or type: "all" or "show me everything*')
-    name = input()
-    print_charts(out,name)
+    selection = input()
+    names = selection.replace(' ','').split(',')
+    for name in names:
+        print_charts(out,name)
     
+
+
+# In[38]:
+
+out = all_outputs('division_20')
+
+
+# In[42]:
+
+display_outputs(out)
+
+
+# In[ ]:
+
+
 
